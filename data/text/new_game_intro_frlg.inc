@@ -220,7 +220,7 @@ gOakSpeech_Text_SoYourNameIsPlayer::
 	.string "So your name is {PLAYER}.$"
 
 gOakSpeech_Text_WhatWasHisName::
-	.string "This is my grandson.\p"
+	.string "This is my child.\p"
 	.string "He's been your rival since you both\n"
 	.string "were babies.\p"
 	.string "…Erm, what was his name now?$"

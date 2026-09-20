@@ -1,6 +1,10 @@
 #ifndef GUARD_CONSTANTS_POKEMON_H
 #define GUARD_CONSTANTS_POKEMON_H
 
+// Individual identities stored in BoxPokemon, never inferred from species or personality.
+#define UNIQUE_MON_NONE           0
+#define UNIQUE_MON_SECRET_PIKACHU 1
+
 // Pokémon types
 enum __attribute__((packed)) Type
 {

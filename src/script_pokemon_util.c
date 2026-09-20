@@ -35,6 +35,32 @@ static void CB2_ReturnFromChooseHalfParty(void);
 static void CB2_ReturnFromChooseBattleFrontierParty(void);
 static void HealPlayerBoxes(void);
 
+// Create and mark the individual before delivery, then commit the once-per-save flag.
+void TryGiveSecretPikachu(void)
+{
+    gSpecialVar_Result = MON_CANT_GIVE;
+#if IS_FRLG
+    struct Pokemon mon;
+    u32 identity = UNIQUE_MON_SECRET_PIKACHU;
+
+    if (VarGet(VAR_KANTO_PLAYER_STARTER_SPECIES) == SPECIES_NONE
+     || FlagGet(FLAG_RECEIVED_SECRET_PIKACHU)
+     || CalculatePlayerPartyCount() >= PARTY_SIZE)
+        return;
+
+    // Hardy keeps the initial stats easy to verify; no special moves or form changes.
+    CreateMonWithIVs(&mon, SPECIES_PIKACHU, 5,
+                    GetMonPersonality(SPECIES_PIKACHU, MON_GENDER_RANDOM, NATURE_HARDY, RANDOM_UNOWN_LETTER),
+                    OTID_STRUCT_PLAYER_ID, MAX_PER_STAT_IVS);
+    GiveMonInitialMoveset(&mon);
+    SetMonData(&mon, MON_DATA_UNIQUE_ID, &identity);
+    CalculateMonStats(&mon);
+    gSpecialVar_Result = GiveScriptedMonToPlayer(&mon, PARTY_SIZE);
+    if (gSpecialVar_Result == MON_GIVEN_TO_PARTY)
+        FlagSet(FLAG_RECEIVED_SECRET_PIKACHU);
+#endif
+}
+
 void HealPlayerParty(void)
 {
     u32 i;

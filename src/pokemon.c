@@ -1377,8 +1377,20 @@ void CalculateMonStats(struct Pokemon *mon)
     CalculateMonStatsCont(mon, TRUE);
 }
 
+// Identity follows this individual through storage and evolution. It is not inherited.
+bool32 IsSecretPikachuBox(struct BoxPokemon *mon)
+{
+    return GetBoxMonData(mon, MON_DATA_UNIQUE_ID) == UNIQUE_MON_SECRET_PIKACHU;
+}
+
+bool32 IsSecretPikachu(struct Pokemon *mon)
+{
+    return IsSecretPikachuBox(&mon->box);
+}
+
 void CalculateMonStatsCont(struct Pokemon *mon, bool32 updateSpeedStat)
 {
+    bool32 secretPikachu = IsSecretPikachu(mon);
     s32 oldMaxHP = GetMonData(mon, MON_DATA_MAX_HP);
     s32 currentHP = GetMonData(mon, MON_DATA_HP);
     enum Species species = GetMonData(mon, MON_DATA_SPECIES);
@@ -1416,6 +1428,9 @@ void CalculateMonStatsCont(struct Pokemon *mon, bool32 updateSpeedStat)
         n = ModifyStatByNature(nature, n, i);
         if (B_FRIENDSHIP_BOOST == TRUE)
             n = n + ((n * 10 * friendship) / (MAX_FRIENDSHIP * 100));
+        // Apply once to freshly calculated stats, after nature and other normal bonuses.
+        if (secretPikachu)
+            n *= 2;
         SetMonData(mon, MON_DATA_MAX_HP + i, &n);
     }
 
@@ -1434,6 +1449,9 @@ void CalculateMonStatsCont(struct Pokemon *mon, bool32 updateSpeedStat)
         newMaxHP = (((n + ev[STAT_HP] / 4) * level) / 100) + level + 10;
     }
 
+    if (secretPikachu)
+        newMaxHP *= 2;
+
     gBattleScripting.levelUpHP = newMaxHP - oldMaxHP;
     if (gBattleScripting.levelUpHP == 0)
         gBattleScripting.levelUpHP = 1;
@@ -1443,7 +1461,12 @@ void CalculateMonStatsCont(struct Pokemon *mon, bool32 updateSpeedStat)
     // been initialized at this point or this Pokémon is
     // just fainted, the check for oldMaxHP is important.
     if (currentHP == 0 && oldMaxHP != 0)
+    {
+        // Keep boxed HP loss in sync too, so storage cannot revive a fainted gift.
+        if (secretPikachu)
+            SetMonData(mon, MON_DATA_HP, &currentHP);
         return;
+    }
 
     // Only add to currentHP if newMaxHP went up.
     if (newMaxHP > oldMaxHP)
@@ -1467,6 +1490,9 @@ void BoxMonToMon(const struct BoxPokemon *src, struct Pokemon *dest)
     SetMonData(dest, MON_DATA_MAIL, &value);
     value = GetBoxMonData(&dest->box, MON_DATA_HP_LOST);
     CalculateMonStats(dest);
+    // Stored damage can exceed a newly recalculated maximum. Never wrap gift HP.
+    if (IsSecretPikachu(dest))
+        value = min(value, GetMonData(dest, MON_DATA_MAX_HP));
     value = GetMonData(dest, MON_DATA_MAX_HP) - value;
     SetMonData(dest, MON_DATA_HP, &value);
 }
@@ -2399,6 +2425,9 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         case MON_DATA_GIGANTAMAX_FACTOR:
             retVal = GetSubstruct3(boxMon)->gigantamaxFactor;
             break;
+        case MON_DATA_UNIQUE_ID:
+            retVal = GetSubstruct0(boxMon)->uniqueId;
+            break;
         case MON_DATA_TERA_TYPE:
             {
                 struct PokemonSubstruct0 *substruct0 = GetSubstruct0(boxMon);
@@ -2845,6 +2874,9 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
             break;
         case MON_DATA_GIGANTAMAX_FACTOR:
             SET8(GetSubstruct3(boxMon)->gigantamaxFactor);
+            break;
+        case MON_DATA_UNIQUE_ID:
+            SET8(GetSubstruct0(boxMon)->uniqueId);
             break;
         case MON_DATA_TERA_TYPE:
             SET8(GetSubstruct0(boxMon)->teraType);

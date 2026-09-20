@@ -125,6 +125,7 @@ enum MonData {
     MON_DATA_GIGANTAMAX_FACTOR,
     MON_DATA_TERA_TYPE,
     MON_DATA_EVOLUTION_TRACKER,
+    MON_DATA_UNIQUE_ID,
 };
 
 #define BLOCK_AI_DYNAMAX 15 // Used as dynamax level value by the AI to indicate this mon shouldn't dynamax
@@ -134,7 +135,7 @@ struct PokemonSubstruct0
     enum Species species:11; // 2047 species.
     enum Type teraType:5; // 30 types.
     enum Item heldItem:10; // 1023 items.
-    u16 unused_02:6;
+    u16 uniqueId:6; // UNIQUE_MON_*; uses existing encrypted padding, preserving save size.
     u32 experience:21;
     u32 nickname11:8; // 11th character of nickname.
     u32 unused_04:3;
@@ -789,6 +790,8 @@ enum TrainerPicID GetUnionRoomTrainerPic(void);
 enum TrainerClassID GetUnionRoomTrainerClass(void);
 void CreateEnemyEventMon(void);
 void CalculateMonStats(struct Pokemon *mon);
+bool32 IsSecretPikachu(struct Pokemon *mon);
+bool32 IsSecretPikachuBox(struct BoxPokemon *mon);
 void CalculateMonStatsCont(struct Pokemon *mon, bool32 updateSpeedStat);
 void BoxMonToMon(const struct BoxPokemon *src, struct Pokemon *dest);
 u8 GetLevelFromMonExp(struct Pokemon *mon);
